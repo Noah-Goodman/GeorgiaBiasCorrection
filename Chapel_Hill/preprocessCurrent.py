@@ -21,9 +21,9 @@ def preprocess_data(xFeat: pd.DataFrame, species: str):
     df: pandas df with shape (n, d)
     """
     if species in ["pm25", "pm10"]:
-        xFeat = xFeat[["timestamp_local", "rh", "temp", "pm25", "pm10"]].dropna(subset=[species])
+        xFeat = xFeat[["timestamp_local", "rh", "temp", "pm25", "pm10"]].dropna(subset=["pm25", "pm10"])
     elif species in ["no2", "no"]:
-        xFeat = xFeat[["timestamp_local", "rh", "temp", "no2", "no"]].dropna(subset=[species])
+        xFeat = xFeat[["timestamp_local", "rh", "temp", "no2", "no"]].dropna(subset=["no2", "no"])
     else:
         xFeat = xFeat[["timestamp_local", "rh", "temp", species]].dropna(subset=[species])
 
@@ -92,10 +92,15 @@ def preprocess_data(xFeat: pd.DataFrame, species: str):
     
 
     # normalize rh and temp
-    feat_to_normalize = ["rh", "temp", "rh_sq", "temp_sq"]
+    if species in ["pm25", "pm10"]:
+        feat_to_normalize = ["rh", "temp", "rh_sq", "temp_sq"]
+    else:
+        feat_to_normalize = ["rh", "temp"]
     xFeat[feat_to_normalize] = xFeat[feat_to_normalize].apply(np.log1p)
     scaler = joblib.load(f"scalers/rh-temp-scaler-{species}.pkl")
     xFeat[feat_to_normalize] = scaler.transform(xFeat[feat_to_normalize])
+
+    xFeat = xFeat.dropna()
 
     return xFeat
 
@@ -105,10 +110,10 @@ def main():
     
     args = parser.parse_args()
 
-    xFeat = pd.read_csv(f"../.data/Chapel-Hill/CurrentRaw.csv")
+    xFeat = pd.read_csv(f"../.data/Chapel-Hill/current/raw.csv")
 
     xFeat = preprocess_data(xFeat, args.species)
-    xFeat.to_csv(f"../.data/Chapel-Hill/Preprocessed-Current-{args.species}.csv")
+    xFeat.to_csv(f"../.data/Chapel-Hill/current/preprocessed-{args.species}.csv")
 
 
 if __name__ == "__main__":

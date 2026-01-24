@@ -25,9 +25,9 @@ def preprocess_data(xFeat: pd.DataFrame, y: pd.DataFrame, species: str):
 
     # Universal preprocessing
     if species in ["pm25", "pm10"]:
-        xFeat = xFeat[["timestamp_local", "rh", "temp", "pm25", "pm10"]].dropna(subset=[species])
+        xFeat = xFeat[["timestamp_local", "rh", "temp", "pm25", "pm10"]].dropna(subset=["pm25", "pm10"])
     elif species in ["no2", "no"]:
-        xFeat = xFeat[["timestamp_local", "rh", "temp", "no2", "no"]].dropna(subset=[species])
+        xFeat = xFeat[["timestamp_local", "rh", "temp", "no2", "no"]].dropna(subset=["no2", "no"])
     else:
         xFeat = xFeat[["timestamp_local", "rh", "temp", species]].dropna(subset=[species])
 
@@ -97,17 +97,24 @@ def preprocess_data(xFeat: pd.DataFrame, y: pd.DataFrame, species: str):
     
 
     # normalize rh and temp
-    feat_to_normalize = ["rh", "temp", "rh_sq", "temp_sq"]
+    if species in ["pm25", "pm10"]:
+        feat_to_normalize = ["rh", "temp", "rh_sq", "temp_sq"]
+    else:
+        feat_to_normalize = ["rh", "temp"]
     xFeat[feat_to_normalize] = xFeat[feat_to_normalize].apply(np.log1p)
     scaler = MinMaxScaler()
     xFeat[feat_to_normalize] = scaler.fit_transform(xFeat[feat_to_normalize])
 
     # y
     y.dropna(subset=[species], inplace=True)
-    y['Date'] = pd.to_datetime(y["Date"])
+    y['Date'] = pd.to_datetime(y["Date"], format="%d-%b-%Y %H:%M")
     y['dayhour'] = y["Date"].dt.strftime('%Y-%m-%d %H')
     y.drop("Date", axis=1, inplace=True)
-    y.set_index("dayhour",inplace=True)
+    y.set_index("dayhour", inplace=True)
+
+    # if ozone convert from ppm to ppb
+    if species in ["o3", "co"]:
+        y[species] = y[species] * 1000
 
 
     # only keep rows that have dayhour in gapa DF
@@ -139,11 +146,15 @@ def main():
     args = parser.parse_args()
 
     xFeat = pd.read_csv(f"../.data/Chapel-Hill/collocation/raw.csv")
-    y = pd.read_csv(f"../.data/Chapel-Hill/collocation/gapa-{args.species}.csv")
+    y = pd.read_csv(f"../.data/Chapel-Hill/collocation/gapa-{args.species}.csv").dropna(subset=[args.species])
 
     xFeat, y, scaler = preprocess_data(xFeat, y, args.species)
-    # Save dayhours used for visualization
-    xFeat.index.to_series().to_csv(f"../.data/Chapel-Hill/dayhour/{args.species}.csv", index=False)
+
+    # update gapa csv file to only have target species values
+    y.to_csv(f"../.data/Chapel-Hill/collocation/gapa-{args.species}.csv", index=False)
+
+    # Save preprocessed data to be used for visualization and dayhour alignment
+    xFeat.to_csv(f"../.data/Chapel-Hill/collocation/preprocessed-{args.species}.csv")
 
     joblib.dump(scaler, f"scalers/rh-temp-scaler-{args.species}.pkl")
 
