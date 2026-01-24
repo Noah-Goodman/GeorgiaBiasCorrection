@@ -1,38 +1,56 @@
-# Data
+# Georgia Bias Correction
 
-### file structure
+## Data
 
-.data/
------/[Location]/
-----------------currentRaw.csv
-----------------dayhour/
------------------------[species].csv
-----------------split/
------------------------xTrain-[species].csv
------------------------xTest-[species].csv
------------------------yTrain-[species].csv
------------------------yTest-[species].csv
+### File Structure
 
-### Information
+```
+data/
+└── [Location]/
+    ├── currentRaw.csv
+    ├── dayhour/
+    │   └── [species].csv
+    └── split/
+        ├── xTrain-[species].csv
+        ├── xTest-[species].csv
+        ├── yTrain-[species].csv
+        └── yTest-[species].csv
+```
 
-- Species list: pm10, pm25, no, no2, o3, co
+### Species
 
-# Settup environment
+`pm10`, `pm25`, `no`, `no2`, `o3`, `co`
 
-- python -m venv .venv
-- pip install -r Requirements.txt
+## Setup Environment
 
-# Steps to train model for specific sensor:
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r Requirements.txt
+```
 
-- download the QuantAQ and GAPA data from May 31st - July 16th, 2025
-- preprocess.py collocatedQAQ GAPA [species]
-- modelBakeoff.py [sensor#]/xTest.csv [sensor#]/yTest.csv [sensor#]/xTrain.csv [sensor#]/yTrain.csv [sensor#]/bestParams.json
+## Steps to Train Model
 
-# Steps to correct current data:
+1. Download the QuantAQ and GAPA data from May 31st - July 16th, 2025
+2. Run preprocessing:
+   ```bash
+   python preprocess.py collocatedQAQ GAPA [species]
+   ```
+3. Run model bakeoff:
+   ```bash
+   python modelBakeoff.py [sensor#]/xTest.csv [sensor#]/yTest.csv [sensor#]/xTrain.csv [sensor#]/yTrain.csv [sensor#]/bestParams.json
+   ```
 
-- preprocessCurrent.py [species]
+## Steps to Correct Current Data
 
-# Visualization:
+```bash
+python preprocessCurrent.py [species]
+```
 
-- Confirm model bakeoff works by using the bakeoff's best model
-- Visualize test: python visualization.py [TODO]
+## Visualization
+
+1. Confirm model bakeoff works by using the bakeoff's best model
+2. Visualize test:
+   ```bash
+   python visualization.py [TODO]
+   ```
