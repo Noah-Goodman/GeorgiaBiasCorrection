@@ -2,20 +2,37 @@
 
 ## Data
 
+- Data is not sored on this repository
+
 ### File Structure
 
 ```
-data/
+.data/
 └── [Location]/
+    ├── collocation
+    |   ├── raw.csv
+    |   └── GAPA-[species].csv
     ├── currentRaw.csv
     ├── dayhour/
     │   └── [species].csv
+    ├── hyperParams/
+    │   └── [species].json
     └── split/
         ├── xTrain-[species].csv
         ├── xTest-[species].csv
         ├── yTrain-[species].csv
         └── yTest-[species].csv
 ```
+
+### Data cleaning
+
+- Confirm Georgia Air Public Access (GAPA) csv file has the expected format:
+
+```
+Date,[species]
+```
+
+- This may require manually manipulating the header of the csv file
 
 ### Species
 
@@ -34,11 +51,11 @@ pip install -r Requirements.txt
 1. Download the QuantAQ and GAPA data from May 31st - July 16th, 2025
 2. Run preprocessing:
    ```bash
-   python preprocess.py collocatedQAQ GAPA [species]
+   python preprocess.py [species]
    ```
 3. Run model bakeoff:
    ```bash
-   python modelBakeoff.py [sensor#]/xTest.csv [sensor#]/yTest.csv [sensor#]/xTrain.csv [sensor#]/yTrain.csv [sensor#]/bestParams.json
+   python modelBakeoff.py [species]
    ```
 
 ## Steps to Correct Current Data

@@ -134,14 +134,12 @@ def holdout(xFeat, y, testSize=0.2):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("xFeat")
-    parser.add_argument("y")
     parser.add_argument("species")
     
     args = parser.parse_args()
 
-    xFeat = pd.read_csv(args.xFeat)
-    y = pd.read_csv(args.y)
+    xFeat = pd.read_csv(f"../.data/Chapel-Hill/collocation/raw.csv")
+    y = pd.read_csv(f"../.data/Chapel-Hill/collocation/gapa-{args.species}.csv")
 
     xFeat, y, scaler = preprocess_data(xFeat, y, args.species)
     # Save dayhours used for visualization
