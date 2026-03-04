@@ -2,7 +2,7 @@
 
 ## Data
 
-- Data is not sored on this repository
+- Data is not stored on this repository
 
 ### File Structure
 
@@ -11,10 +11,11 @@
 └── [Location]/
     ├── collocation
     |   ├── raw.csv
-    |   └── GAPA-[species].csv
-    ├── currentRaw.csv
-    ├── dayhour/
-    │   └── [species].csv
+    |   ├── preprocessed-[species].csv
+    |   └── gapa-[species].csv
+    ├── current/
+    |   ├── preprocessed-[species].csv
+    │   └── raw.csv
     ├── hyperParams/
     │   └── [species].json
     └── split/
@@ -57,6 +58,10 @@ pip install -r Requirements.txt
    ```bash
    python modelBakeoff.py [species]
    ```
+4. Use the best algorithm and hyperparameters from .data/[location]/hyperParams/[species].json for in train_model and run train.py
+   ```bash
+   python train.py [species]
+   ```
 
 ## Steps to Correct Current Data
 
@@ -69,5 +74,5 @@ python preprocessCurrent.py [species]
 1. Confirm model bakeoff works by using the bakeoff's best model
 2. Visualize test:
    ```bash
-   python visualization.py [TODO]
+   python visualization.py [species] -f train or -f current
    ```
