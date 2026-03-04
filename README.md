@@ -2,7 +2,7 @@
 
 ## Data
 
-- Data is not sored on this repository
+- Data is not stored on this repository
 
 ### File Structure
 
