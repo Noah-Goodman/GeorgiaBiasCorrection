@@ -24,19 +24,19 @@ def train_model(xTrain: pd.DataFrame, yTrain: pd.DataFrame, species: str):
     model: trained model
     """
     if species == "no2":
-        model = Lasso(alpha=0.001, max_iter=5000, fit_intercept=False)
+        model = Ridge(alpha=1.0, fit_intercept=True, random_state=42)
         model.fit(xTrain, yTrain)
     elif species == "no":
-        model = KNeighborsRegressor(weights='distance', n_neighbors=7, p=2, metric='manhattan')
+        model = KNeighborsRegressor(weights='distance', n_neighbors=11, metric='manhattan')
         model.fit(xTrain, yTrain)
     elif species == "o3":
-        model = Lasso(alpha=0.001, max_iter=5000, fit_intercept=False)
+        model = Ridge(alpha=1.0, fit_intercept=True, random_state=42)
         model.fit(xTrain, yTrain)
     elif species == "co":
-        model = DecisionTreeRegressor(criterion="squared_error", min_samples_leaf=4, min_samples_split=10, max_depth=15, splitter="random", random_state=42)
+        model = KNeighborsRegressor(weights='uniform', n_neighbors=15, p=2, metric='manhattan')
         model.fit(xTrain, yTrain)
     elif species == "pm10":
-        model = DecisionTreeRegressor(criterion="absolute_error", min_samples_leaf=4, min_samples_split=2, max_depth=15, splitter="random", random_state=42)
+        model = LinearRegression(fit_intercept=False)
         model.fit(xTrain, yTrain)
     elif species == "pm25":
         model = DecisionTreeRegressor(criterion="absolute_error", min_samples_leaf=4, min_samples_split=2, max_depth=20, splitter="best", random_state=42)

@@ -132,7 +132,7 @@ def main():
     argparser = argparse.ArgumentParser()
     argparser.add_argument('species', type=str,
                            help='Species to plot results for (pm25, pm10, no2, no, o3, co)')
-    argparser.add_argument('-f', type=str, default='train',
+    argparser.add_argument('-f', type=str, default='current',
                            help='Whether to plot train or current results')
     args = argparser.parse_args()
     model = joblib.load(f"models/{args.species}-model.pkl")
