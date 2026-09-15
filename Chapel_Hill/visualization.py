@@ -2,8 +2,49 @@ import argparse
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import KNeighborsRegressor
-import matplotlib.pyplot as plt
+from mizani.breaks import breaks_date
+from plotnine import (aes, element_blank, element_text, geom_line, ggplot, labs,
+                      scale_color_manual, scale_x_datetime, theme, theme_bw)
 import joblib
+
+# Line width, in plotnine's size units
+LINE_SIZE = 0.75
+
+
+def long_form(times, values, series: str) -> pd.DataFrame:
+    """
+    Put one series in the long form plotnine draws from
+
+    Parameters
+    ----------
+    times : sequence of timestamps with shape (m, )
+        x values, converted to datetime
+    values : sequence with shape (m, )
+        y values
+    series : str
+        Name this series carries in the legend
+
+    Returns
+    -------
+    Long form df with columns dayhour, value and series
+    """
+
+    return pd.DataFrame({
+        "dayhour": pd.to_datetime(pd.Series(np.asarray(times))),
+        "value": np.asarray(values, dtype=float).ravel(),
+        "series": series,
+    })
+
+
+def base_theme():
+    """Theme shared by every plot: white panel, major grid only, rotated date ticks"""
+
+    return (theme_bw()
+            + theme(figure_size=(12, 6),
+                    panel_grid_minor=element_blank(),
+                    axis_text_x=element_text(rotation=45, ha="right"),
+                    plot_title=element_text(ha="center"),
+                    legend_title=element_blank()))
 
 
 def dayhour_split(species: str):
@@ -21,7 +62,7 @@ def dayhour_split(species: str):
 def plot_training(model, yTest: pd.DataFrame, xTest: pd.DataFrame, species: str):
     """
     Plot training results
-    
+
     Parameters
     ----------
     model : trained model
@@ -65,29 +106,41 @@ def plot_training(model, yTest: pd.DataFrame, xTest: pd.DataFrame, species: str)
 
     raw_QAQ = pd.read_csv(f"../.data/Chapel-Hill/collocation/preprocessed-{species}.csv")
     raw_QAQ["dayhour"] = pd.to_datetime(raw_QAQ["dayhour"])
-    plt.figure(figsize=(12, 6))
-    plt.plot(yTest["dayhour"], yTest[species], label=f"Real {species.upper()} Values", color='blue', alpha=0.6)
-    plt.plot(yPrediction["dayhour"], yPrediction[species], label=f"Predicted {species.upper()} Values", color='red', alpha=0.6)
-    plt.plot(raw_QAQ["dayhour"], raw_QAQ[species], label=f"Raw {species.upper()} Values", color='green', alpha=0.6)
-    plt.xlabel('dayhour')
+
+    predicted = f"Predicted {species.upper()} Values"
+    raw = f"Raw {species.upper()} Values"
+
+    # Legend order follows the order the series are listed in, as plot order did
+    order = ["FRM/FEM", predicted, raw]
+    colors = {"FRM/FEM": "orange", predicted: "red", raw: "green"}
+
+    data = pd.concat([
+        long_form(yTest["dayhour"], yTest[species], "FRM/FEM"),
+        long_form(yPrediction["dayhour"], yPrediction[species], predicted),
+        long_form(raw_QAQ["dayhour"], raw_QAQ[species], raw),
+    ], ignore_index=True)
+    data["series"] = pd.Categorical(data["series"], categories=order, ordered=True)
+
     if species in ["pm25", "pm10"]:
-        plt.ylabel(f'{species.upper()} (µg/m³)')
+        ylabel = f'{species.upper()} (µg/m³)'
     else:
-        plt.ylabel(f'{species.upper()} (PPB)')
-    plt.legend()
+        ylabel = f'{species.upper()} (PPB)'
 
     title = f'{species.upper()} Levels: Real vs Predicted vs Raw'
-    plt.title(title)
-    plt.xticks(rotation=45)
-    plt.gca().xaxis.set_major_locator(plt.MaxNLocator(10))
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(f"figures/{title}.png")
+
+    plot = (ggplot(data, aes("dayhour", "value", color="series"))
+            + geom_line(alpha=0.6, size=LINE_SIZE)
+            + scale_color_manual(values=colors, limits=order)
+            + scale_x_datetime(breaks=breaks_date(10))
+            + labs(x='dayhour', y=ylabel, title=title)
+            + base_theme())
+
+    plot.save(f"figures/{title}.png", dpi=100, verbose=False)
 
 def plot_current(model, current: pd.DataFrame, species: str):
     """
     Plot current period results
-    
+
     Parameters
     ----------
     model : trained model
@@ -109,23 +162,34 @@ def plot_current(model, current: pd.DataFrame, species: str):
     # add dayhour column back in
     current["dayhour"] = df_dayhour
 
-    plt.figure(figsize=(12, 6))
-    plt.plot(current["dayhour"], current[species], label=f"Raw {species.upper()} Values", color='blue', alpha=0.6)
-    plt.plot(current["dayhour"], yPred, label=f"Predicted {species.upper()} Values", color='red', alpha=0.6)
-    plt.xlabel('dayhour')
+    predicted = f"Predicted {species.upper()} Values"
+    raw = f"Raw {species.upper()} Values"
+
+    # Legend order follows the order the series are listed in, as plot order did
+    order = [raw, predicted]
+    colors = {raw: "blue", predicted: "red"}
+
+    data = pd.concat([
+        long_form(current["dayhour"], current[species], raw),
+        long_form(current["dayhour"], yPred, predicted),
+    ], ignore_index=True)
+    data["series"] = pd.Categorical(data["series"], categories=order, ordered=True)
+
     if species in ["pm25", "pm10"]:
-        plt.ylabel(f'{species.upper()} (µg/m³)')
+        ylabel = f'{species.upper()} (µg/m³)'
     else:
-        plt.ylabel(f'{species.upper()} (PPB)')
-    plt.legend()
+        ylabel = f'{species.upper()} (PPB)'
 
     title = f'Current {species.upper()} Levels: Raw vs Predicted'
-    plt.title(title)
-    plt.xticks(rotation=45)
-    plt.gca().xaxis.set_major_locator(plt.MaxNLocator(10))
-    plt.grid()
-    plt.tight_layout()
-    plt.savefig(f"figures/{title}.png")
+
+    plot = (ggplot(data, aes("dayhour", "value", color="series"))
+            + geom_line(alpha=0.6, size=LINE_SIZE)
+            + scale_color_manual(values=colors, limits=order)
+            + scale_x_datetime(breaks=breaks_date(10))
+            + labs(x='dayhour', y=ylabel, title=title)
+            + base_theme())
+
+    plot.save(f"figures/{title}.png", dpi=100, verbose=False)
 
 
 def main():

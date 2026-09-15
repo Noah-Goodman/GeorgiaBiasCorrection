@@ -150,8 +150,10 @@ def main():
 
     xFeat, y, scaler = preprocess_data(xFeat, y, args.species)
 
-    # update gapa csv file to only have target species values
-    y.to_csv(f"../.data/Pittsburgh/collocation/gapa-{args.species}.csv", index=False)
+    # Save the aligned gapa target to its own file, keeping the dayhour index.
+    # Never write back over gapa-{species}.csv: it holds the only copy of the
+    # raw dates, and o3/co are unit-converted above so a re-run would compound.
+    y.to_csv(f"../.data/Pittsburgh/collocation/gapa-preprocessed-{args.species}.csv", index=True)
 
     # Save preprocessed data to be used for visualization and dayhour alignment
     xFeat.to_csv(f"../.data/Pittsburgh/collocation/preprocessed-{args.species}.csv")
@@ -159,7 +161,7 @@ def main():
     joblib.dump(scaler, f"scalers/rh-temp-scaler-{args.species}.pkl")
 
     xTrain, xTest, yTrain, yTest = holdout(xFeat, y)
-    xTrain.to_csv(f"../.data/Pittsburgh-Hill/split/xTrain-{args.species}.csv", index=False)
+    xTrain.to_csv(f"../.data/Pittsburgh/split/xTrain-{args.species}.csv", index=False)
     xTest.to_csv(f"../.data/Pittsburgh/split/xTest-{args.species}.csv", index=False)
     yTrain.to_csv(f"../.data/Pittsburgh/split/yTrain-{args.species}.csv", index=False)
     yTest.to_csv(f"../.data/Pittsburgh/split/yTest-{args.species}.csv", index=False)
