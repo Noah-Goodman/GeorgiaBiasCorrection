@@ -3,6 +3,8 @@ import numpy as np
 from sklearn.linear_model import Lasso, LinearRegression, Ridge
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.neighbors import KNeighborsRegressor
+from sklearn.ensemble import RandomForestRegressor
+from xgboost import XGBRegressor
 import joblib
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, root_mean_squared_error
@@ -30,10 +32,10 @@ def train_model(xTrain: pd.DataFrame, yTrain: pd.DataFrame, species: str):
     if species == "no2":
         # model = Lasso(alpha=0.001, fit_intercept=False, max_iter=5000, random_state=42)
         # model = DecisionTreeRegressor(criterion="squared_error", min_samples_leaf=1, min_samples_split=20, max_depth=5, splitter="best", random_state=42)
-        model = KNeighborsRegressor(weights='uniform', n_neighbors=15, p=2, metric='manhattan')
+        model = RandomForestRegressor(max_depth=None, max_features=0.5, min_samples_leaf=2, n_estimators=300, random_state=42)
         model.fit(xTrain, yTrain)
     elif species == "no":
-        model = KNeighborsRegressor(weights='distance', n_neighbors=20, metric='manhattan', p=2)
+        model = XGBRegressor(learning_rate=0.03, max_depth=6, min_child_weight=1, n_estimators=100, random_state=42, subsample=0.7)
         model.fit(xTrain, yTrain)
     elif species == "o3":
         model = Ridge(alpha=1.0, fit_intercept=True, random_state=42)
@@ -43,7 +45,7 @@ def train_model(xTrain: pd.DataFrame, yTrain: pd.DataFrame, species: str):
         model.fit(xTrain, yTrain)
     elif species == "pm10":
         # model = LinearRegression(fit_intercept=False)
-        model = Lasso(alpha=0.001, fit_intercept=True, random_state=42, max_iter=5000)
+        model = RandomForestRegressor(max_depth=None, max_features=0.33, min_samples_leaf=1, n_estimators=300, random_state=42)
         model.fit(xTrain, yTrain)
     elif species == "pm25":
         model = DecisionTreeRegressor(criterion="absolute_error", min_samples_leaf=4, min_samples_split=2, max_depth=20, splitter="best", random_state=42)
@@ -76,7 +78,8 @@ def main():
     xTrain = pd.read_csv(f"../.data/Pittsburgh/split/xTrain-{args.species}.csv")
     yTrain = pd.read_csv(f"../.data/Pittsburgh/split/yTrain-{args.species}.csv")
     model = train_model(xTrain, yTrain, args.species)
-    joblib.dump(model, f"models/{args.species}-model.pkl")
+    # models/ is in git, and an uncompressed random forest pickle is about 4x larger
+    joblib.dump(model, f"models/{args.species}-model.pkl", compress=3)
 
     xTest = pd.read_csv(f"../.data/Pittsburgh/split/xTest-{args.species}.csv")
     yTest = pd.read_csv(f"../.data/Pittsburgh/split/yTest-{args.species}.csv")

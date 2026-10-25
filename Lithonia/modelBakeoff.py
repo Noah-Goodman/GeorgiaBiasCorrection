@@ -7,9 +7,11 @@ from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Lasso, LinearRegression, LogisticRegression, Ridge
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neural_network import MLPRegressor
+from xgboost import XGBRegressor
 
 
 def eval_gridsearch(clf, pgrid, xTrain, yTrain, xTest, yTest):
@@ -172,7 +174,7 @@ def get_parameter_grid(mName):
     """
     if mName == "DT":
         return {
-            "criterion": ["squared_error", "friedman_mse", "absolute_error"],
+            "criterion": ["squared_error", "absolute_error"],
             "splitter": ["best", "random"],
             "max_depth": [3, 5, 10, 15, 20, None],
             "min_samples_split": [2, 5, 10, 20],
@@ -193,7 +195,7 @@ def get_parameter_grid(mName):
     elif mName == "Lasso":
         return {
             'alpha': [0.001, 0.01, 0.1, 1, 10, 100],
-            'max_iter': [1000, 2000, 5000, None],
+            'max_iter': [1000, 2000, 5000],
             'fit_intercept': [True, False]
         }
     elif mName == "KNN":
@@ -202,6 +204,21 @@ def get_parameter_grid(mName):
             'weights': ['uniform', 'distance'],
             'metric': ['euclidean', 'manhattan', 'minkowski'],
             'p': [1, 2, 3, 4, 5]
+        }
+    elif mName == "RF":
+        return {
+            "n_estimators": [100, 300],
+            "max_features": [0.33, 0.5, 1.0],
+            "max_depth": [5, 10, None],
+            "min_samples_leaf": [1, 2, 4]
+        }
+    elif mName == "XGB":
+        return {
+            "n_estimators": [100, 300, 600],
+            "max_depth": [2, 3, 4, 6],
+            "learning_rate": [0.03, 0.1, 0.3],
+            "subsample": [0.7, 1.0],
+            "min_child_weight": [1, 5]
         }
     # elif mName == "NN":
     #     return {
@@ -274,6 +291,24 @@ def main():
     perfDict, bestParamDict = eval_searchcv(knnName, knnClf, knnGrid,
                                                    xTrain, yTrain, xTest, yTest,
                                                    perfDict, bestParamDict)
+    # random forest (bootstrap-bagged trees; max_features=1.0 makes it plain bagging)
+    print("Tuning Random Forest --------")
+    rfName = "RF"
+    rfGrid = get_parameter_grid(rfName)
+    rfClf = RandomForestRegressor(random_state=42)
+    perfDict, bestParamDict = eval_searchcv(rfName, rfClf, rfGrid,
+                                           xTrain, yTrain, xTest, yTest,
+                                           perfDict, bestParamDict)
+    # gradient-boosted trees
+    print("Tuning XGBoost --------")
+    xgbName = "XGB"
+    xgbGrid = get_parameter_grid(xgbName)
+    # One thread per fit: with ~800 rows, threading every small fit takes over twice as long,
+    # and worse when several bakeoffs run at once. It doesn't change the result.
+    xgbClf = XGBRegressor(random_state=42, n_jobs=1)
+    perfDict, bestParamDict = eval_searchcv(xgbName, xgbClf, xgbGrid,
+                                           xTrain, yTrain, xTest, yTest,
+                                           perfDict, bestParamDict)
     # neural networks
     # print("Tuning neural networks --------")
     # nnName = "NN"
@@ -286,6 +321,8 @@ def main():
     perfDF = pd.DataFrame.from_dict(perfDict, orient='index')
     print(perfDF)
     # save roc curves to data.to_csv(args.rocOutput, index=False)
+    # store each tuned model's test scores, which decide the model train.py uses
+    perfDF.to_csv(f"../.data/Lithonia/hyperParams/{args.species}-scores.csv", index_label="Model")
     # store the best parameters
     with open(f"../.data/Lithonia/hyperParams/{args.species}.json", 'w') as f:
         json.dump(bestParamDict, f)

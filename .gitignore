@@ -1,0 +1,9 @@
+.venv
+.data
+
+# Ignore local claude
+.claude/settings.local.json
+
+
+# Ignore figures
+*.png

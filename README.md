@@ -12,12 +12,14 @@
     ├── collocation
     |   ├── raw.csv
     |   ├── preprocessed-[species].csv
-    |   └── gapa-[species].csv
+    |   ├── gapa-[species].csv
+    |   └── gapa-preprocessed-[species].csv
     ├── current/
     |   ├── preprocessed-[species].csv
     │   └── raw.csv
     ├── hyperParams/
-    │   └── [species].json
+    │   ├── [species].json
+    │   └── [species]-scores.csv
     └── split/
         ├── xTrain-[species].csv
         ├── xTest-[species].csv
@@ -47,7 +49,13 @@ source .venv/bin/activate
 pip install -r Requirements.txt
 ```
 
+On macOS, XGBoost also needs the OpenMP runtime: `brew install libomp`. Without it, `import xgboost` fails with
+"libxgboost.dylib could not be loaded".
+
 ## Steps to Train Model
+
+In Claude Code, `/run-pipeline [Location] [species ...]` runs all of these steps for one location, including picking
+the model.
 
 1. Download the QuantAQ and GAPA data from May 31st - July 16th, 2025
 2. Run preprocessing:
@@ -58,7 +66,7 @@ pip install -r Requirements.txt
    ```bash
    python modelBakeoff.py [species]
    ```
-4. Use the best algorithm and hyperparameters from .data/[location]/hyperParams/[species].json for in train_model and run train.py
+4. Pick the best model from .data/[location]/hyperParams/[species]-scores.csv, copy its algorithm and hyperparameters from [species].json into train_model, and run train.py
    ```bash
    python train.py [species]
    ```

@@ -4,3 +4,5 @@ scikit-learn
 matplotlib
 plotnine
 joblib
+# Keep pinned: models/*.pkl hold pickled XGBoost models, which may not load under another version
+xgboost==3.4.1

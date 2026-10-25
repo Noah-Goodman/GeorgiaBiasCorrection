@@ -6,6 +6,7 @@ from mizani.breaks import breaks_date
 from plotnine import (aes, element_blank, element_text, geom_line, ggplot, labs,
                       scale_color_manual, scale_x_datetime, theme, theme_bw)
 import joblib
+from preprocess import holdout
 
 # Line width, in plotnine's size units
 LINE_SIZE = 0.75
@@ -48,15 +49,9 @@ def base_theme():
 
 
 def dayhour_split(species: str):
+    # Same holdout preprocess.py used, so these dayhours line up row for row with the split csvs
     preprocessed = pd.read_csv(f"../.data/Lithonia/collocation/preprocessed-{species}.csv")
-    rng = np.random.default_rng(seed=25)
-    N = len(preprocessed)
-    permuted_indices = rng.permutation(N)
-    preprocessed = preprocessed.iloc[permuted_indices]
-    dayhour = preprocessed["dayhour"]
-    split = int(N*0.8)
-    train_dayhour = dayhour[:split]
-    test_dayhour = dayhour[split:]
+    _xTrain, _xTest, train_dayhour, test_dayhour = holdout(preprocessed, preprocessed["dayhour"])
     return train_dayhour, test_dayhour
 
 def plot_training(model, yTest: pd.DataFrame, xTest: pd.DataFrame, species: str):

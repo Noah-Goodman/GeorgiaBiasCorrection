@@ -150,8 +150,10 @@ def main():
 
     xFeat, y, scaler = preprocess_data(xFeat, y, args.species)
 
-    # update gapa csv file to only have target species values
-    y.to_csv(f"../.data/Lithonia/collocation/gapa-{args.species}.csv", index=False)
+    # Save the aligned gapa target to its own file, keeping the dayhour index.
+    # Never write back over gapa-{species}.csv: it holds the only copy of the
+    # raw dates, and o3/co are unit-converted above so a re-run would compound.
+    y.to_csv(f"../.data/Lithonia/collocation/gapa-preprocessed-{args.species}.csv", index=True)
 
     # Save preprocessed data to be used for visualization and dayhour alignment
     xFeat.to_csv(f"../.data/Lithonia/collocation/preprocessed-{args.species}.csv")

@@ -7,6 +7,7 @@ from plotnine import (aes, element_blank, element_text, geom_label, geom_line,
                       geom_point, ggplot, labs, scale_color_manual,
                       scale_x_datetime, scale_y_continuous, theme, theme_bw)
 import joblib
+from preprocess import holdout
 
 # Gaps longer than this many hours are drawn as a break instead of a straight line
 MAX_GAP_HOURS = 50
@@ -150,15 +151,9 @@ def base_theme():
 
 
 def dayhour_split(species: str):
+    # Same holdout preprocess.py used, so these dayhours line up row for row with the split csvs
     preprocessed = pd.read_csv(f"../.data/Pittsburgh/collocation/preprocessed-{species}.csv")
-    rng = np.random.default_rng(seed=25)
-    N = len(preprocessed)
-    permuted_indices = rng.permutation(N)
-    preprocessed = preprocessed.iloc[permuted_indices]
-    dayhour = preprocessed["dayhour"]
-    split = int(N*0.8)
-    train_dayhour = dayhour[:split]
-    test_dayhour = dayhour[split:]
+    _xTrain, _xTest, train_dayhour, test_dayhour = holdout(preprocessed, preprocessed["dayhour"])
     return train_dayhour, test_dayhour
 
 def plot_training(model, yTest: pd.DataFrame, xTest: pd.DataFrame, species: str,

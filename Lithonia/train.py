@@ -69,7 +69,8 @@ def main():
     xTrain = pd.read_csv(f"../.data/Lithonia/split/xTrain-{args.species}.csv")
     yTrain = pd.read_csv(f"../.data/Lithonia/split/yTrain-{args.species}.csv")
     model = train_model(xTrain, yTrain, args.species)
-    joblib.dump(model, f"models/{args.species}-model.pkl")
+    # models/ is in git, and an uncompressed random forest pickle is about 4x larger
+    joblib.dump(model, f"models/{args.species}-model.pkl", compress=3)
 
     xTest = pd.read_csv(f"../.data/Lithonia/split/xTest-{args.species}.csv")
     yTest = pd.read_csv(f"../.data/Lithonia/split/yTest-{args.species}.csv")
